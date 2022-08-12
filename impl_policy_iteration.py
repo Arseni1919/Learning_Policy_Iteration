@@ -1,5 +1,5 @@
+import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import poisson
 import itertools
 from impl_env_car_rental import JacksCarRentalEnv
 
@@ -10,7 +10,9 @@ def policy_evaluation(policy, v_func_old, env):
     delta = epsilon + 1
     v_func = np.copy(v_func_old)
 
+    iterations = 0
     while delta > epsilon:
+        iterations += 1
         delta = 0
         # for each state
         for state in itertools.product(range(env.max_cars), repeat=2):
@@ -24,7 +26,7 @@ def policy_evaluation(policy, v_func_old, env):
             v_func[state] = new_v
 
             delta = max(delta, np.abs(curr_v - v_func[state]))
-            print(f'\rstate: {state}, delta: {delta}', end='')
+            print(f'\r[iter {iterations}] state: {state}, delta: {delta}', end='')
 
     return v_func
 
@@ -45,7 +47,7 @@ def policy_improvement(policy, v_func, env):
             action_dict[action] = v_sum
 
         best_action = max(action_dict.keys(), key=action_dict.get)
-        print(f'\rstate: {state}, action: {best_action}', end='')
+        print(f'\rstate: {state}, action: {best_action}, policy_stable: {policy_stable}', end='')
         policy[state] = best_action
         if old_action != policy[state]:
             policy_stable = False
@@ -57,14 +59,17 @@ def termination_check():
     return value_func_stable
 
 
-def plot_policy(policy):
+def plot_results(mat, title=''):
     print()
-    print(policy)
+    print(mat)
+    plt.imshow(mat)
+    plt.title(f'{title}')
+    plt.show()
 
 
 def main():
     # env
-    env = JacksCarRentalEnv(MAX_CARS)
+    env = JacksCarRentalEnv(MAX_CARS, VERSION_2)
     max_cars = env.max_cars
 
     # init
@@ -76,16 +81,22 @@ def main():
     iteration = 0
     while not policy_stable or not v_func_stable:
         iteration += 1
-        print(f'iteration {iteration}:')
+        print(f'\n###\niteration {iteration}:\n###\n')
         v_func = policy_evaluation(policy, v_func, env)
         policy_stable = policy_improvement(policy, v_func, env)
         v_func_stable = termination_check()
 
-    plot_policy(policy)
+        plot_results(policy, title='policy')
+        plot_results(v_func, title='v_func')
+
+    plot_results(policy, title='policy')
+    plot_results(v_func, title='v_func')
 
 
 if __name__ == '__main__':
     GAMMA = 0.9
-    MAX_CARS = 10
+    MAX_CARS = 20
+    VERSION_2 = False
+    # VERSION_2 = True
     main()
 

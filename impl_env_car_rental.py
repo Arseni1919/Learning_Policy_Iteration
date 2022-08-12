@@ -1,13 +1,14 @@
 import numpy as np
-from scipy.stats import poisson
+from scipy.stats import poisson, skellam
 import itertools
 
 
 class JacksCarRentalEnv:
-    def __init__(self, max_cars=10):
+    def __init__(self, max_cars=10, version_2=False):
         self.rent_per_car = 10
         self._cost_per_move = 2
         self.max_cars = max_cars
+        self.version_2 = version_2
         self.max_cars_move_per_night = 5
         self.L_REQ_1 = 3
         self.L_REQ_2 = 4
@@ -18,7 +19,8 @@ class JacksCarRentalEnv:
         pass
 
     def plot(self, text):
-        print(text)
+        pass
+        # print(text)
 
     def step(self, action):
         """
@@ -40,50 +42,50 @@ class JacksCarRentalEnv:
         curr_1, curr_2 = state
         to_move = 0
         curr_reward = 0
-        curr_prob = 0.0
+        # curr_prob = 0.0
 
         # take an action
+        # from 1 to 2
         if 0 < action <= 5:
             to_move = min(curr_1, action)
             to_move = min(to_move, self.max_cars - curr_2)
             curr_1 -= to_move
             curr_2 += to_move
+
+            if self.version_2:
+                if to_move > 0:
+                    to_move -= 1
+
+        # from 2 to 1
         if -5 <= action < 0:
             action *= -1
             to_move = min(curr_2, action)
             to_move = min(to_move, self.max_cars - curr_1)
             curr_2 -= to_move
             curr_1 += to_move
+
         curr_reward += - to_move * self._cost_per_move
-        self.plot(f'to move: {to_move}, reward: {curr_reward}')
+        if self.version_2:
+            if curr_1 > 10:
+                curr_reward += 4
+            if curr_2 > 10:
+                curr_reward += 4
 
         other_1, other_2 = other_state
 
         # for 1
-        min_num_1 = min(curr_1, other_1)
-        min_num_1 = max(min_num_1, 1)
-        for i in range(min_num_1):
+        diff_1 = other_1 - curr_1
+        prob_1 = skellam.pmf(k=diff_1, mu1=self.L_RET_1, mu2=self.L_REQ_1)
+        if diff_1 < 0:
+            curr_reward += 10 * (-1) * diff_1
 
-            rental_cars_1 = curr_1 - i
-            prob_req_1 = poisson.pmf(k=rental_cars_1, mu=self.L_REQ_1)
+        # for 2
+        diff_2 = other_2 - curr_2
+        prob_2 = skellam.pmf(k=diff_2, mu1=self.L_RET_2, mu2=self.L_REQ_2)
+        if diff_2 < 0:
+            curr_reward += 10 * (-1) * diff_2
 
-            return_cars_1 = other_1 - i
-            prob_ret_1 = poisson.pmf(k=return_cars_1, mu=self.L_RET_1)
-
-            # for 2
-            min_num_2 = min(curr_2, other_2, 1)
-            min_num_2 = max(min_num_2, 1)
-            for j in range(min_num_2):
-                rental_cars_2 = curr_2 - j
-                prob_req_2 = poisson.pmf(k=rental_cars_2, mu=self.L_REQ_2)
-
-                return_cars_2 = other_2 - j
-                prob_ret_2 = poisson.pmf(k=return_cars_2, mu=self.L_RET_2)
-
-                chance = prob_req_1 * prob_req_2 * prob_ret_1 * prob_ret_2
-
-                curr_prob += chance
-                curr_reward += self.rent_per_car * (rental_cars_1 + rental_cars_2) * chance
+        curr_prob = prob_1 * prob_2
 
         return curr_prob, curr_reward
 
