@@ -1,7 +1,15 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import itertools
 from impl_env_car_rental import JacksCarRentalEnv
+from functions import *
+
+
+def plot_results(mat, title='', to_plot=True):
+    print()
+    print(mat)
+    if to_plot:
+        plt.imshow(mat)
+        plt.title(f'{title}')
+        plt.show()
 
 
 def policy_evaluation(policy, v_func_old, env):
@@ -59,12 +67,24 @@ def termination_check():
     return value_func_stable
 
 
-def plot_results(mat, title=''):
-    print()
-    print(mat)
-    plt.imshow(mat)
-    plt.title(f'{title}')
-    plt.show()
+def policy_iteration(env, policy, v_func):
+    policy_stable, v_func_stable = False, False
+
+    iteration = 0
+    while not policy_stable or not v_func_stable:
+        iteration += 1
+        print(f'\n###\niteration {iteration}:\n###\n')
+        v_func = policy_evaluation(policy, v_func, env)
+        policy_stable = policy_improvement(policy, v_func, env)
+        v_func_stable = termination_check()
+
+        plot_results(policy, title='policy', to_plot=False)
+        plot_results(v_func, title='v_func', to_plot=False)
+
+    # plot_results(policy, title='policy')
+    # plot_results(v_func, title='v_func')
+
+    return policy, v_func
 
 
 def main():
@@ -75,19 +95,9 @@ def main():
     # init
     policy = np.zeros((max_cars, max_cars))
     v_func = np.zeros((max_cars, max_cars))
-    policy_stable, v_func_stable = False, False
 
     # policy iteration
-    iteration = 0
-    while not policy_stable or not v_func_stable:
-        iteration += 1
-        print(f'\n###\niteration {iteration}:\n###\n')
-        v_func = policy_evaluation(policy, v_func, env)
-        policy_stable = policy_improvement(policy, v_func, env)
-        v_func_stable = termination_check()
-
-        plot_results(policy, title='policy')
-        plot_results(v_func, title='v_func')
+    policy, v_func = policy_iteration(env, policy, v_func)
 
     plot_results(policy, title='policy')
     plot_results(v_func, title='v_func')
@@ -95,8 +105,8 @@ def main():
 
 if __name__ == '__main__':
     GAMMA = 0.9
-    MAX_CARS = 20
-    VERSION_2 = False
-    # VERSION_2 = True
+    MAX_CARS = 10
+    # VERSION_2 = False
+    VERSION_2 = True
     main()
 
