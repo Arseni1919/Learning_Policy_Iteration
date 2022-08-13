@@ -8,6 +8,7 @@ def update_axes(ax, input_dict, title=''):
     y_p = list(input_dict.values())
     ax.plot(x_p, y_p)
     ax.set_title(f'{title}')
+    # ax.set_yticks(y_p)
 
 
 def plot_results(policy_dict, v_func_dict, title='', to_plot=True):
@@ -22,7 +23,7 @@ def plot_results(policy_dict, v_func_dict, title='', to_plot=True):
 
 
 def value_iteration(env, policy, v_func):
-    epsilon = 1e-10
+    epsilon = 1e-20
     delta = epsilon + 1
 
     iteration = 1
@@ -80,7 +81,8 @@ if __name__ == '__main__':
     GAMMA = 1
     # P_h = 0.4
     # P_h = 0.25
-    P_h = 0.55
+    P_h = 0.9
+    # P_h = 0.55
     fig, (ax1, ax2) = plt.subplots(1, 2)
     main()
 
